@@ -30,6 +30,14 @@ const Editor = (() => {
   let _dirty = false;
   let _autoSaveTimer = null;
 
+  // Find/Replace state
+  const elFindWidget = document.getElementById('find-replace-widget');
+  const elFindInput = document.getElementById('find-input');
+  const elReplaceInput = document.getElementById('replace-input');
+  const elFindCount = document.getElementById('find-count');
+  let _findMatches = [];
+  let _findIndex = -1;
+
   marked.setOptions({ breaks: true, gfm: true });
 
   function processWikiLinks(html) {
@@ -211,6 +219,118 @@ const Editor = (() => {
     setMode(_mode === 'edit' ? 'preview' : 'edit');
   }
 
+  function setupFindReplace() {
+    document.getElementById('btn-find-close').addEventListener('click', closeFind);
+    elFindInput.addEventListener('input', updateFind);
+    document.getElementById('btn-find-next').addEventListener('click', () => nextMatch(1));
+    document.getElementById('btn-find-prev').addEventListener('click', () => nextMatch(-1));
+    
+    elFindInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        nextMatch(e.shiftKey ? -1 : 1);
+      }
+      if (e.key === 'Escape') closeFind();
+    });
+    
+    document.getElementById('btn-replace').addEventListener('click', replaceCurrent);
+    document.getElementById('btn-replace-all').addEventListener('click', replaceAll);
+  }
+
+  function openFind() {
+    setMode('edit');
+    elFindWidget.classList.remove('hidden');
+    elFindInput.focus();
+    elFindInput.select();
+    updateFind();
+  }
+  
+  function openReplace() {
+    openFind();
+    elReplaceInput.focus();
+  }
+
+  function closeFind() {
+    elFindWidget.classList.add('hidden');
+    elEditor.focus();
+    _findMatches = [];
+    _findIndex = -1;
+  }
+
+  function updateFind() {
+    const query = elFindInput.value.toLowerCase();
+    _findMatches = [];
+    _findIndex = -1;
+    
+    if (!query) {
+      elFindCount.textContent = '0/0';
+      return;
+    }
+    
+    const text = elEditor.value.toLowerCase();
+    let idx = text.indexOf(query);
+    while (idx !== -1) {
+      _findMatches.push({ start: idx, length: query.length });
+      idx = text.indexOf(query, idx + query.length);
+    }
+    
+    if (_findMatches.length > 0) {
+      _findIndex = 0;
+      highlightMatch();
+    } else {
+      elFindCount.textContent = '0/0';
+    }
+  }
+
+  function nextMatch(dir) {
+    if (_findMatches.length === 0) return;
+    _findIndex = (_findIndex + dir + _findMatches.length) % _findMatches.length;
+    highlightMatch();
+  }
+
+  function highlightMatch() {
+    if (_findIndex < 0 || _findIndex >= _findMatches.length) return;
+    const match = _findMatches[_findIndex];
+    elFindCount.textContent = `${_findIndex + 1}/${_findMatches.length}`;
+    
+    elEditor.focus();
+    elEditor.setSelectionRange(match.start, match.start + match.length);
+    
+    const textBefore = elEditor.value.substring(0, match.start);
+    const lines = textBefore.split('\n');
+    const lineHeight = 21; // Approx
+    elEditor.scrollTop = Math.max(0, lines.length * lineHeight - elEditor.clientHeight / 2);
+  }
+
+  function replaceCurrent() {
+    if (_findMatches.length === 0 || _findIndex < 0) return;
+    const match = _findMatches[_findIndex];
+    const rep = elReplaceInput.value;
+    
+    const val = elEditor.value;
+    elEditor.value = val.substring(0, match.start) + rep + val.substring(match.start + match.length);
+    
+    _dirty = true;
+    updateStatus();
+    scheduleAutoSave();
+    
+    updateFind();
+  }
+
+  function replaceAll() {
+    const query = elFindInput.value;
+    if (!query) return;
+    const rep = elReplaceInput.value;
+    
+    const regex = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    elEditor.value = elEditor.value.replace(regex, rep);
+    
+    _dirty = true;
+    updateStatus();
+    scheduleAutoSave();
+    updateFind();
+  }
+
   function init() {
     elEditor.addEventListener('input', () => {
       _dirty = true;
@@ -248,8 +368,22 @@ const Editor = (() => {
         e.preventDefault();
         saveNow();
       }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        openFind();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+        e.preventDefault();
+        openReplace();
+      }
+      if (e.key === 'Escape') {
+        if (!elFindWidget.classList.contains('hidden')) {
+          closeFind();
+        }
+      }
     });
     
+    setupFindReplace();
     setMode('edit');
   }
 
@@ -258,6 +392,9 @@ const Editor = (() => {
     openNote,
     clearEditor,
     saveNow,
+    setMode,
+    openFind,
+    openReplace,
     getCurrentNote: () => _currentNote,
     refreshLinksPanel: refreshRightPanelLinks
   };

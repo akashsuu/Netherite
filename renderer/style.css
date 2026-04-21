@@ -79,6 +79,30 @@ input {
   display: none !important;
 }
 
+/* ── Scrollbars ─────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border: 5px solid transparent;
+  background-clip: padding-box;
+  border-radius: 99px;
+  min-height: 40px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border: 4px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* ══════════════════════════════════════════════════════════════
    TITLE BAR
 ══════════════════════════════════════════════════════════════ */
@@ -562,10 +586,14 @@ kbd {
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
 }
 
 #note-title-input {
-  width: 100%;
+  flex: 1;
   background: transparent;
   border: none;
   font-size: 28px;
@@ -573,6 +601,69 @@ kbd {
   color: var(--text-normal);
   padding: 0;
   font-family: var(--font-ui);
+}
+
+#note-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#find-replace-widget {
+  position: absolute;
+  top: 70px;
+  right: 40px;
+  background-color: var(--background-secondary-alt);
+  border: 1px solid var(--divider-color);
+  border-radius: var(--radius-m);
+  padding: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 320px;
+}
+
+.find-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.find-row input {
+  flex: 1;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-normal);
+  padding: 4px 8px;
+  border-radius: var(--radius-s);
+  font-size: 13px;
+}
+
+.find-row input:focus {
+  border-color: var(--interactive-accent);
+}
+
+.find-row button {
+  background-color: var(--interactive-normal);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  border-radius: var(--radius-s);
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.find-row button:hover {
+  background-color: var(--interactive-hover);
+  color: var(--text-normal);
+}
+
+#find-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-width: 30px;
+  text-align: center;
 }
 
 #note-title-input::placeholder {
@@ -1035,3 +1126,67 @@ kbd {
 #toast.success { border-left: 3px solid #4CAF50; }
 #toast.error { border-left: 3px solid #F44336; }
 #toast.info { border-left: 3px solid var(--interactive-accent); }
+
+/* ══════════════════════════════════════════════════════════════
+   CONTEXT MENU
+══════════════════════════════════════════════════════════════ */
+#context-menu, #note-options-menu {
+  position: fixed;
+  background-color: var(--background-secondary-alt);
+  border: 1px solid var(--divider-color);
+  border-radius: var(--radius-m);
+  padding: 6px;
+  min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+}
+
+#note-options-menu {
+  min-width: 260px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.menu-item {
+  padding: 6px 12px;
+  border-radius: var(--radius-s);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: var(--text-normal);
+  font-size: 13px;
+  user-select: none;
+}
+
+.menu-item:hover {
+  background-color: var(--interactive-hover);
+}
+
+.menu-item.danger {
+  color: #F44336;
+}
+
+.menu-item.danger:hover {
+  background-color: rgba(244, 67, 54, 0.15);
+}
+
+.menu-item svg {
+  color: var(--icon-color);
+}
+
+.menu-item.danger svg {
+  color: #F44336;
+}
+
+.menu-item:hover svg:not(.danger svg) {
+  color: var(--icon-color-hover);
+}
+
+.menu-separator {
+  height: 1px;
+  background-color: var(--divider-color);
+  margin: 4px 0;
+}

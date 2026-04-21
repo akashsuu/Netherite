@@ -14,10 +14,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   renameNote:   (oldTitle, newTitle)  => ipcRenderer.invoke('notes:rename', oldTitle, newTitle),
   createNote:   (title)               => ipcRenderer.invoke('notes:create', title),
   openFolder:   ()                    => ipcRenderer.invoke('notes:openFolder'),
+  showInExplorer:(title)              => ipcRenderer.invoke('notes:showInExplorer', title),
+  getPath:      (title)               => ipcRenderer.invoke('notes:getPath', title),
   getNotesDir:  ()                    => ipcRenderer.invoke('notes:getDir'),
 
   // ── Window controls ─────────────────────────────────────
   minimize: () => ipcRenderer.send('window:minimize'),
   maximize: () => ipcRenderer.send('window:maximize'),
   close:    () => ipcRenderer.send('window:close'),
+  newWindow:() => ipcRenderer.send('window:new'),
+  exportPdf:(title) => ipcRenderer.invoke('window:exportPdf', title),
 });

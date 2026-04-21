@@ -30,6 +30,13 @@ const App = (() => {
   const elRightTabBtns = document.querySelectorAll('.right-tab-btn');
   const elRightPanels = document.querySelectorAll('.right-panel');
 
+  // Context Menu
+  const elContextMenu = document.getElementById('context-menu');
+  const elMenuOpen = document.getElementById('menu-open');
+  const elMenuRename = document.getElementById('menu-rename');
+  const elMenuDelete = document.getElementById('menu-delete');
+  let _contextMenuTarget = null;
+
   // State
   let _searchQuery = '';
   let _toastTimer = null;
@@ -70,12 +77,21 @@ const App = (() => {
     elFileList.querySelectorAll('.file-item').forEach(li => {
       li.addEventListener('click', () => openNoteInActiveTab(li.dataset.title));
       
-      // Right click to delete (simple context menu replacement)
-      li.addEventListener('contextmenu', async (e) => {
+      li.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        if (confirm(`Delete "${li.dataset.title}"?`)) {
-          await deleteNote(li.dataset.title);
-        }
+        _contextMenuTarget = li.dataset.title;
+        
+        // Ensure menu doesn't go off-screen
+        elContextMenu.classList.remove('hidden');
+        const rect = elContextMenu.getBoundingClientRect();
+        let x = e.clientX;
+        let y = e.clientY;
+        
+        if (x + rect.width > window.innerWidth) x -= rect.width;
+        if (y + rect.height > window.innerHeight) y -= rect.height;
+        
+        elContextMenu.style.left = `${x}px`;
+        elContextMenu.style.top = `${y}px`;
       });
     });
   }
@@ -337,6 +353,148 @@ const App = (() => {
     });
   }
 
+  function bindContextMenu() {
+    document.addEventListener('click', () => {
+      if (!elContextMenu.classList.contains('hidden')) {
+        elContextMenu.classList.add('hidden');
+      }
+    });
+
+    elMenuOpen.addEventListener('click', () => {
+      if (_contextMenuTarget) {
+        openNoteInActiveTab(_contextMenuTarget);
+      }
+    });
+
+    elMenuRename.addEventListener('click', async () => {
+      if (_contextMenuTarget) {
+        const newTitle = prompt('Rename note to:', _contextMenuTarget);
+        if (newTitle && newTitle.trim() !== '' && newTitle !== _contextMenuTarget) {
+          const ok = await FileManager.renameNote(_contextMenuTarget, newTitle);
+          if (ok) {
+            renameTab(_contextMenuTarget, newTitle);
+            
+            // If the note being renamed is currently open in the editor, update its title input
+            if (Editor.getCurrentNote() === _contextMenuTarget) {
+              document.getElementById('note-title-input').value = newTitle;
+              // We don't want to call Editor.openNote again because it might clear dirty state, 
+              // but we need to update internal state. A full openNote is safest though.
+              Editor.openNote(newTitle);
+            }
+            
+            renderSidebarFiles();
+            showToast(`Renamed to "${newTitle}"`, 'success');
+          } else {
+            showToast('Rename failed. Note may already exist.', 'error');
+          }
+        }
+      }
+    });
+
+    elMenuDelete.addEventListener('click', async () => {
+      if (_contextMenuTarget) {
+        if (confirm(`Delete "${_contextMenuTarget}"?`)) {
+          await deleteNote(_contextMenuTarget);
+        }
+      }
+    });
+  }
+
+  // Note Options Menu
+  const elBtnNoteOptions = document.getElementById('btn-note-options');
+  const elNoteOptionsMenu = document.getElementById('note-options-menu');
+
+  function bindNoteOptionsMenu() {
+    elBtnNoteOptions.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const rect = elBtnNoteOptions.getBoundingClientRect();
+      elNoteOptionsMenu.style.top = `${rect.bottom + 4}px`;
+      elNoteOptionsMenu.style.right = `${window.innerWidth - rect.right}px`;
+      elNoteOptionsMenu.style.left = 'auto'; 
+      elNoteOptionsMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!elBtnNoteOptions.contains(e.target)) {
+        elNoteOptionsMenu.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('opt-backlinks').addEventListener('click', () => {
+      document.querySelector('[data-panel="backlinks"]').click();
+    });
+    document.getElementById('opt-reading-view').addEventListener('click', () => {
+      Editor.setMode('preview');
+    });
+    document.getElementById('opt-source-mode').addEventListener('click', () => {
+      Editor.setMode('edit');
+    });
+    
+    document.getElementById('opt-split-right').addEventListener('click', () => showToast('Split right coming soon', 'info'));
+    document.getElementById('opt-split-down').addEventListener('click', () => showToast('Split down coming soon', 'info'));
+    
+    document.getElementById('opt-new-window').addEventListener('click', () => window.electronAPI.newWindow());
+    
+    document.getElementById('opt-rename').addEventListener('click', () => {
+      document.getElementById('note-title-input').focus();
+    });
+    
+    document.getElementById('opt-move').addEventListener('click', () => showToast('Move file coming soon', 'info'));
+    document.getElementById('opt-bookmark').addEventListener('click', () => showToast('Bookmark added', 'success'));
+    document.getElementById('opt-merge').addEventListener('click', () => showToast('Merge file coming soon', 'info'));
+    document.getElementById('opt-add-property').addEventListener('click', () => showToast('Properties coming soon', 'info'));
+    
+    document.getElementById('opt-export-pdf').addEventListener('click', async () => {
+      showToast('Exporting to PDF...', 'info');
+      const ok = await window.electronAPI.exportPdf(Editor.getCurrentNote());
+      if (ok) showToast('Exported to Downloads', 'success');
+      else showToast('Export failed', 'error');
+    });
+    
+    document.getElementById('opt-find').addEventListener('click', () => {
+      Editor.openFind();
+    });
+    document.getElementById('opt-replace').addEventListener('click', () => {
+      Editor.openReplace();
+    });
+    
+    document.getElementById('opt-copy-path').addEventListener('click', async () => {
+      const cur = Editor.getCurrentNote();
+      if (cur) {
+        const p = await window.electronAPI.getPath(cur);
+        navigator.clipboard.writeText(p);
+        showToast('Path copied to clipboard', 'success');
+      }
+    });
+    
+    document.getElementById('opt-version-history').addEventListener('click', () => showToast('Version history unavailable', 'info'));
+    document.getElementById('opt-linked-view').addEventListener('click', () => showToast('Linked view coming soon', 'info'));
+    
+    document.getElementById('opt-show-explorer').addEventListener('click', async () => {
+      const cur = Editor.getCurrentNote();
+      if (cur) await window.electronAPI.showInExplorer(cur);
+    });
+    
+    document.getElementById('opt-reveal-nav').addEventListener('click', () => {
+      document.getElementById('ribbon-files').click();
+      const items = document.querySelectorAll('.file-item');
+      items.forEach(el => {
+        if (el.dataset.title === Editor.getCurrentNote()) {
+          el.scrollIntoView({behavior: 'smooth', block: 'center'});
+          el.style.backgroundColor = 'var(--interactive-accent)';
+          setTimeout(() => el.style.backgroundColor = '', 1000);
+        }
+      });
+    });
+    
+    document.getElementById('opt-delete').addEventListener('click', () => {
+      const cur = Editor.getCurrentNote();
+      if (cur && confirm(`Delete "${cur}"?`)) {
+        deleteNote(cur);
+      }
+    });
+  }
+
   async function init() {
     await FileManager.init();
     Editor.init();
@@ -379,6 +537,8 @@ const App = (() => {
     bindWindowControls();
     bindSidebarResize();
     bindRibbonAndPanels();
+    bindContextMenu();
+    bindNoteOptionsMenu();
 
     const notes = FileManager.getNotes();
     if (notes.length > 0) {

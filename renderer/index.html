@@ -186,6 +186,27 @@
           <!-- Inline note title -->
           <div id="note-title-area">
             <input id="note-title-input" type="text" placeholder="Untitled" autocomplete="off" spellcheck="false" />
+            <div id="note-actions">
+              <button id="btn-note-options" class="tab-action-btn" title="More options">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Find and Replace Widget -->
+          <div id="find-replace-widget" class="hidden">
+            <div class="find-row">
+              <input id="find-input" type="text" placeholder="Find..." />
+              <span id="find-count">0/0</span>
+              <button id="btn-find-prev" title="Previous (Shift+Enter)">↑</button>
+              <button id="btn-find-next" title="Next (Enter)">↓</button>
+              <button id="btn-find-close" title="Close (Esc)">✕</button>
+            </div>
+            <div class="find-row">
+              <input id="replace-input" type="text" placeholder="Replace..." />
+              <button id="btn-replace">Replace</button>
+              <button id="btn-replace-all">All</button>
+            </div>
           </div>
 
           <!-- Editor + preview -->
@@ -313,6 +334,61 @@
       </div>
       <div id="command-results"></div>
     </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Context Menu
+  ═══════════════════════════════════════════════════════ -->
+  <div id="context-menu" class="hidden">
+    <div class="menu-item" id="menu-open">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+      <span>Open</span>
+    </div>
+    <div class="menu-item" id="menu-rename">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+      <span>Rename</span>
+    </div>
+    <div class="menu-separator"></div>
+    <div class="menu-item danger" id="menu-delete">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+      <span>Delete</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Note Options Menu (3 dots)
+  ═══════════════════════════════════════════════════════ -->
+  <div id="note-options-menu" class="hidden">
+    <div class="menu-item" id="opt-backlinks"><span>Backlinks in document</span></div>
+    <div class="menu-separator"></div>
+    <div class="menu-item" id="opt-reading-view"><span>Reading view</span></div>
+    <div class="menu-item" id="opt-source-mode"><span>Source mode</span></div>
+    <div class="menu-separator"></div>
+    <div class="menu-item" id="opt-split-right"><span>Split right</span></div>
+    <div class="menu-item" id="opt-split-down"><span>Split down</span></div>
+    <div class="menu-separator"></div>
+    <div class="menu-item" id="opt-new-window"><span>Open in new window</span></div>
+    <div class="menu-separator"></div>
+    <div class="menu-item" id="opt-rename"><span>Rename</span></div>
+    <div class="menu-item" id="opt-move"><span>Move file to...</span></div>
+    <div class="menu-item" id="opt-bookmark"><span>Bookmark...</span></div>
+    <div class="menu-separator"></div>
+    <div class="menu-item" id="opt-merge"><span>Merge entire file with...</span></div>
+    <div class="menu-item" id="opt-add-property"><span>Add file property</span></div>
+    <div class="menu-separator"></div>
+    <div class="menu-item" id="opt-export-pdf"><span>Export to PDF...</span></div>
+    <div class="menu-separator"></div>
+    <div class="menu-item" id="opt-find"><span>Find...</span></div>
+    <div class="menu-item" id="opt-replace"><span>Replace...</span></div>
+    <div class="menu-separator"></div>
+    <div class="menu-item" id="opt-copy-path"><span>Copy path</span></div>
+    <div class="menu-item" id="opt-version-history"><span>Open version history</span></div>
+    <div class="menu-item" id="opt-linked-view"><span>Open linked view</span></div>
+    <div class="menu-separator"></div>
+    <div class="menu-item" id="opt-show-explorer"><span>Show in system explorer</span></div>
+    <div class="menu-item" id="opt-reveal-nav"><span>Reveal file in navigation</span></div>
+    <div class="menu-separator"></div>
+    <div class="menu-item danger" id="opt-delete"><span>Delete file</span></div>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════

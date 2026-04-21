@@ -43,6 +43,21 @@ function createWindow() {
     win.isMaximized() ? win.unmaximize() : win.maximize()
   );
   ipcMain.on('window:close', () => win.close());
+  ipcMain.on('window:new', () => createWindow());
+  
+  // PDF Export
+  ipcMain.handle('window:exportPdf', async (event, title) => {
+    const pdfPath = path.join(app.getPath('downloads'), `${title || 'Export'}.pdf`);
+    try {
+      const data = await win.webContents.printToPDF({});
+      fs.writeFileSync(pdfPath, data);
+      require('electron').shell.showItemInFolder(pdfPath);
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  });
 }
 
 app.whenReady().then(() => {
@@ -117,6 +132,22 @@ ipcMain.handle('notes:create', (_, suggestedTitle) => {
 ipcMain.handle('notes:openFolder', () => {
   const { shell } = require('electron');
   shell.openPath(NOTES_DIR);
+});
+
+/** Show specific note in the OS file explorer */
+ipcMain.handle('notes:showInExplorer', (_, title) => {
+  const { shell } = require('electron');
+  const filePath = path.join(NOTES_DIR, `${title}.md`);
+  if (fs.existsSync(filePath)) {
+    shell.showItemInFolder(filePath);
+    return true;
+  }
+  return false;
+});
+
+/** Return absolute path of a note */
+ipcMain.handle('notes:getPath', (_, title) => {
+  return path.join(NOTES_DIR, `${title}.md`);
 });
 
 /** Return the notes directory path (for display) */
