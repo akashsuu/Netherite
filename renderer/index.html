@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 script-src 'self' https://cdn.jsdelivr.net;
+                 style-src  'self' 'unsafe-inline' https://fonts.googleapis.com;
+                 font-src   'self' https://fonts.gstatic.com;
+                 img-src    'self' data:;" />
+  <title>Obsidian Clone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- ═══════════════════════════════════════════════════════
+       Custom Title Bar
+  ═══════════════════════════════════════════════════════ -->
+  <div id="title-bar">
+    <div id="title-bar-drag" class="drag-region">
+      <span class="app-icon">◈</span>
+      <span class="app-name">Obsidian Clone</span>
+    </div>
+    <div id="window-controls">
+      <button id="btn-minimize" title="Minimize">─</button>
+      <button id="btn-maximize" title="Maximize">□</button>
+      <button id="btn-close"    title="Close">✕</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Main Layout
+  ═══════════════════════════════════════════════════════ -->
+  <div id="layout">
+
+    <!-- ── Sidebar ── -->
+    <aside id="sidebar">
+      <div id="sidebar-header">
+        <div id="vault-label">
+          <span class="vault-icon">⬡</span>
+          <span id="vault-name">My Vault</span>
+        </div>
+        <div id="sidebar-actions">
+          <button id="btn-new-note"    class="icon-btn" title="New Note">＋</button>
+          <button id="btn-open-folder" class="icon-btn" title="Open Vault Folder">⎇</button>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div id="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input id="search-input" type="text" placeholder="Search notes…" autocomplete="off" />
+        <button id="search-clear" class="icon-btn hidden" title="Clear">✕</button>
+      </div>
+
+      <!-- File list -->
+      <ul id="file-list"></ul>
+    </aside>
+
+    <!-- ── Resize handle ── -->
+    <div id="sidebar-resize-handle"></div>
+
+    <!-- ── Editor area ── -->
+    <main id="editor-area">
+
+      <!-- Top toolbar -->
+      <div id="editor-toolbar">
+        <div id="toolbar-left">
+          <span id="current-note-title" class="note-title-display">—</span>
+        </div>
+        <div id="toolbar-right">
+          <button id="btn-toggle-mode"    class="toolbar-btn" title="Toggle Preview/Edit">⚡ Preview</button>
+          <button id="btn-graph"          class="toolbar-btn accent" title="Graph View">⬡ Graph</button>
+          <button id="btn-delete-note"    class="toolbar-btn danger hidden" title="Delete Note">🗑 Delete</button>
+        </div>
+      </div>
+
+      <!-- Inline title editor -->
+      <div id="note-title-bar" class="hidden">
+        <input id="note-title-input" type="text" placeholder="Note title…" autocomplete="off" />
+      </div>
+
+      <!-- Editor / Preview split -->
+      <div id="editor-container">
+        <div id="editor-pane">
+          <textarea id="md-editor" placeholder="Start writing in Markdown…&#10;&#10;Link to notes using [[Note Name]]" spellcheck="true"></textarea>
+        </div>
+        <div id="preview-pane" class="hidden">
+          <div id="md-preview"></div>
+        </div>
+      </div>
+
+      <!-- Status bar -->
+      <div id="status-bar">
+        <span id="status-words">0 words</span>
+        <span id="status-chars">0 chars</span>
+        <span id="status-saved" class="saved-badge">✔ Saved</span>
+      </div>
+    </main>
+
+    <!-- ── Backlinks panel ── -->
+    <aside id="backlinks-panel">
+      <div id="backlinks-header">
+        <span>🔗 Backlinks</span>
+      </div>
+      <div id="backlinks-body">
+        <p class="empty-msg">No backlinks found.</p>
+      </div>
+
+      <div id="outlinks-header">
+        <span>→ Outgoing Links</span>
+      </div>
+      <div id="outlinks-body">
+        <p class="empty-msg">No outgoing links.</p>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Graph Overlay
+  ═══════════════════════════════════════════════════════ -->
+  <div id="graph-overlay" class="hidden">
+    <div id="graph-panel">
+      <div id="graph-header">
+        <span class="graph-title">⬡ Knowledge Graph</span>
+        <div id="graph-controls">
+          <input id="graph-search" type="text" placeholder="Filter nodes…" />
+          <button id="btn-graph-close" class="icon-btn">✕</button>
+        </div>
+      </div>
+      <div id="graph-canvas-wrap">
+        <canvas id="graph-canvas"></canvas>
+        <div id="graph-tooltip" class="hidden"></div>
+      </div>
+      <div id="graph-legend">
+        <span class="legend-item"><span class="dot active"></span>Current note</span>
+        <span class="legend-item"><span class="dot linked"></span>Linked</span>
+        <span class="legend-item"><span class="dot normal"></span>Other</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Toast notification
+  ═══════════════════════════════════════════════════════ -->
+  <div id="toast" class="hidden"></div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Scripts (order matters)
+  ═══════════════════════════════════════════════════════ -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="fileManager.js"></script>
+  <script src="editor.js"></script>
+  <script src="graph.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
