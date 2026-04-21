@@ -79,25 +79,21 @@ input {
   display: none !important;
 }
 
-/* ── Scrollbars (thin, clean – matches Obsidian) ───────────── */
+/* ── Scrollbars ─────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.12);
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: rgba(255,255,255,0.15);
   border-radius: 99px;
   min-height: 36px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.22);
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  background: rgba(255,255,255,0.28);
 }
 ::-webkit-scrollbar-corner {
   background: transparent;
