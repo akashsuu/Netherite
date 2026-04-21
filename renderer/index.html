@@ -193,22 +193,6 @@
             </div>
           </div>
 
-          <!-- Find and Replace Widget -->
-          <div id="find-replace-widget" class="hidden">
-            <div class="find-row">
-              <input id="find-input" type="text" placeholder="Find..." />
-              <span id="find-count">0/0</span>
-              <button id="btn-find-prev" title="Previous (Shift+Enter)">↑</button>
-              <button id="btn-find-next" title="Next (Enter)">↓</button>
-              <button id="btn-find-close" title="Close (Esc)">✕</button>
-            </div>
-            <div class="find-row">
-              <input id="replace-input" type="text" placeholder="Replace..." />
-              <button id="btn-replace">Replace</button>
-              <button id="btn-replace-all">All</button>
-            </div>
-          </div>
-
           <!-- Editor + preview -->
           <div id="editor-container">
             <div id="editor-pane">
@@ -217,6 +201,22 @@
             <div id="preview-pane" class="hidden">
               <div id="md-preview"></div>
             </div>
+          </div>
+        </div>
+
+        <!-- Find and Replace Widget (outside note-view so it's never clipped) -->
+        <div id="find-replace-widget" class="hidden">
+          <div class="find-row">
+            <input id="find-input" type="text" placeholder="Find..." autocomplete="off" />
+            <span id="find-count">0/0</span>
+            <button id="btn-find-prev" title="Previous (Shift+Enter)">&#8593;</button>
+            <button id="btn-find-next" title="Next (Enter)">&#8595;</button>
+            <button id="btn-find-close" title="Close (Esc)">&times;</button>
+          </div>
+          <div class="find-row">
+            <input id="replace-input" type="text" placeholder="Replace..." autocomplete="off" />
+            <button id="btn-replace">Replace</button>
+            <button id="btn-replace-all">All</button>
           </div>
         </div>
 
