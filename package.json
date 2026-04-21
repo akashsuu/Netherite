@@ -1,19 +1,39 @@
 {
-  "name": "obsidian-clone",
-  "version": "1.0.0",
-  "description": "A local-first Markdown note-taking app with graph view",
-  "main": "main.js",
-  "scripts": {
-    "start": "electron .",
-    "dev": "electron . --dev"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "electron": "^30.0.0"
-  },
-  "dependencies": {
-    "marked": "^12.0.0"
-  }
+"name": "netherite",
+"version": "1.0.0",
+"description": "Netherite is a powerful note-taking app with graph-based knowledge visualization.",
+"author": "Akashsuu",
+"main": "main.js",
+"scripts": {
+"start": "electron .",
+"build": "electron-builder"
+},
+"devDependencies": {
+"electron": "^30.0.0",
+"electron-builder": "^26.8.1"
+},
+"build": {
+"appId": "com.akashsuu.netherite",
+"productName": "Netherite",
+"directories": {
+"output": "dist",
+"buildResources": "build"
+},
+"files": [
+"**/*",
+"!dist/*"
+],
+"win": {
+"target": "nsis",
+"icon": "build/icon.ico"
+},
+"nsis": {
+"oneClick": false,
+"allowToChangeInstallationDirectory": true,
+"installerIcon": "build/icon.ico",
+"uninstallerIcon": "build/icon.ico",
+"createDesktopShortcut": true,
+"createStartMenuShortcut": true
+}
+}
 }

@@ -18,7 +18,7 @@ function ensureNotesDir() {
 // ── Window factory ───────────────────────────────────────────
 function createWindow() {
   ensureNotesDir();
-
+  
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -26,6 +26,7 @@ function createWindow() {
     minHeight: 600,
     frame: false,          // custom title-bar
     backgroundColor: '#0d0d0f',
+    icon: path.join(__dirname, 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,   // secure context
