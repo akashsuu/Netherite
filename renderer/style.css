@@ -1189,3 +1189,203 @@ kbd {
   background-color: var(--divider-color);
   margin: 4px 0;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   CANVAS
+══════════════════════════════════════════════════════════════ */
+#canvas-overlay {
+  position: fixed;
+  inset: 38px 0 0 0; /* below title bar */
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  background: #141414;
+}
+
+/* Toolbar */
+#cv-toolbar {
+  height: 44px;
+  background: var(--background-secondary-alt);
+  border-bottom: 1px solid var(--divider-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.cv-toolbar-left {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--text-normal);
+}
+.cv-toolbar-left svg { color: var(--interactive-accent); }
+.cv-toolbar-center { display: flex; align-items: center; gap: 6px; }
+.cv-toolbar-right  { display: flex; align-items: center; gap: 6px; }
+
+.cv-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--interactive-hover);
+  border: 1px solid var(--divider-color);
+  border-radius: var(--radius-s);
+  color: var(--text-normal);
+  font-size: 12px; padding: 5px 10px; cursor: pointer;
+}
+.cv-btn:hover { background: var(--background-modifier-border-hover); color: white; }
+.cv-btn-danger { color: #f44336 !important; }
+.cv-btn-danger:hover { background: rgba(244,67,54,0.15) !important; }
+
+.cv-btn-icon {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-s);
+  background: transparent;
+  border: 1px solid var(--divider-color);
+  color: var(--text-muted);
+  font-size: 14px; cursor: pointer;
+}
+.cv-btn-icon:hover { background: var(--interactive-hover); color: var(--text-normal); }
+.cv-close-btn { border-color: transparent; }
+.cv-close-btn:hover { background: rgba(244,67,54,0.15); color: #f44336; border-color: transparent; }
+
+#cv-zoom-label { font-size: 12px; color: var(--text-muted); min-width: 38px; text-align: center; }
+.cv-divider { width: 1px; height: 20px; background: var(--divider-color); margin: 0 4px; }
+
+/* Viewport */
+#cv-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: grab;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+#cv-viewport:active { cursor: grabbing; }
+
+#cv-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+#cv-svg path, #cv-svg line { pointer-events: stroke; }
+
+#cv-world {
+  position: absolute;
+  top: 0; left: 0;
+  transform-origin: 0 0;
+  z-index: 2;
+}
+
+/* Cards */
+.ccard {
+  position: absolute;
+  background: var(--bg-secondary);
+  border: 1px solid var(--divider-color);
+  border-radius: var(--radius-m);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  display: flex; flex-direction: column;
+  min-height: 100px;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  user-select: none;
+}
+.ccard:hover { border-color: var(--background-modifier-border-hover); box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+.ccard.selected { border-color: var(--interactive-accent); box-shadow: 0 0 0 2px rgba(124,92,255,0.3); }
+.ccard-note { min-width: 220px; }
+.ccard-text { min-width: 160px; }
+
+.ccard-header {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid var(--divider-color);
+  flex-shrink: 0;
+}
+.ccard-header svg, .ccard-type-icon { color: var(--interactive-accent); font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.ccard-title { flex: 1; font-size: 12px; font-weight: 600; color: var(--text-normal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ccard-title-editable, .ccard-title-edit {
+  flex: 1; font-size: 12px; font-weight: 600; color: var(--text-normal);
+  background: transparent; border: none; outline: none;
+  white-space: nowrap; overflow: hidden;
+}
+.ccard-del {
+  width: 18px; height: 18px; border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-faint); font-size: 12px;
+  opacity: 0; transition: opacity 0.1s;
+  flex-shrink: 0;
+}
+.ccard:hover .ccard-del, .ccard.selected .ccard-del { opacity: 1; }
+.ccard-del:hover { background: rgba(244,67,54,0.2); color: #f44336; }
+
+.ccard-body {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  overflow: hidden;
+}
+.ccard-editable {
+  color: var(--text-normal);
+  outline: none;
+  min-height: 60px;
+  cursor: text;
+  user-select: text;
+}
+
+.ccard-conn-handle {
+  position: absolute;
+  right: -7px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 14px;
+  background: var(--interactive-accent);
+  border-radius: 50%;
+  cursor: crosshair;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 5;
+  border: 2px solid var(--bg-secondary);
+}
+.ccard:hover .ccard-conn-handle { opacity: 1; }
+.ccard-conn-handle:hover { transform: translateY(-50%) scale(1.3); }
+
+/* Note Picker */
+#cv-note-picker {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+#cv-note-picker-inner {
+  width: 380px; max-height: 480px;
+  background: var(--bg-primary);
+  border: 1px solid var(--divider-color);
+  border-radius: var(--radius-m);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.cnp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--divider-color);
+  font-size: 13px; font-weight: 600; color: var(--text-normal);
+}
+.cnp-header button { color: var(--text-muted); font-size: 14px; }
+.cnp-header button:hover { color: var(--text-normal); }
+#cv-note-picker-search {
+  margin: 10px 12px;
+  background: var(--background-modifier-border);
+  border: 1px solid var(--divider-color);
+  border-radius: var(--radius-s);
+  color: var(--text-normal);
+  padding: 7px 10px; font-size: 13px;
+}
+#cv-note-picker-search:focus { border-color: var(--interactive-accent); }
+#cv-note-picker-list { flex: 1; overflow-y: auto; padding: 0 6px 8px; }
+.cnp-item {
+  padding: 7px 10px;
+  border-radius: var(--radius-s);
+  font-size: 13px; color: var(--text-normal);
+  cursor: pointer;
+}
+.cnp-item:hover { background: var(--interactive-hover); }

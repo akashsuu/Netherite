@@ -1,0 +1,354 @@
+// ============================================================
+// FILE: renderer/canvas.js  —  Infinite Canvas (Obsidian-style)
+// ============================================================
+const Canvas = (() => {
+  const STORAGE_KEY = 'netherite_canvas_v1';
+
+  // DOM refs (populated in init)
+  let overlay, viewport, world, svgEl, zoomLabel, notePicker, notePickerList, notePickerSearch;
+
+  // Viewport transform
+  let vpX = 0, vpY = 0, vpScale = 1;
+
+  // Interaction state
+  let isPanning = false;
+  let panStart = { mx: 0, my: 0, vx: 0, vy: 0 };
+  let draggingCard = null;
+  let dragOffset = { x: 0, y: 0 };
+  let selectedId = null;
+  let isConnecting = false;
+  let connectFrom = null;
+
+  // Data
+  let cards = [];
+  let connections = [];
+  let nextId = 1;
+
+  // ── Transform helpers ─────────────────────────────────────
+  function screenToWorld(cx, cy) {
+    const r = viewport.getBoundingClientRect();
+    return { x: (cx - r.left - vpX) / vpScale, y: (cy - r.top - vpY) / vpScale };
+  }
+
+  function cardCenterScreen(card) {
+    const el = document.getElementById(`ccard-${card.id}`);
+    if (!el) return null;
+    const r = viewport.getBoundingClientRect();
+    return {
+      x: card.x * vpScale + vpX + r.left + el.offsetWidth  * vpScale / 2,
+      y: card.y * vpScale + vpY + r.top  + el.offsetHeight * vpScale / 2,
+    };
+  }
+
+  function applyTransform() {
+    world.style.transform = `translate(${vpX}px,${vpY}px) scale(${vpScale})`;
+    zoomLabel.textContent = `${Math.round(vpScale * 100)}%`;
+    redrawConnections();
+  }
+
+  // ── Connections (SVG) ─────────────────────────────────────
+  function redrawConnections() {
+    while (svgEl.firstChild) svgEl.removeChild(svgEl.firstChild);
+
+    // Arrow marker
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', 'cv-arrow');
+    marker.setAttribute('markerWidth', '8'); marker.setAttribute('markerHeight', '6');
+    marker.setAttribute('refX', '8'); marker.setAttribute('refY', '3');
+    marker.setAttribute('orient', 'auto');
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('points', '0 0, 8 3, 0 6');
+    poly.setAttribute('fill', '#7c5cff');
+    marker.appendChild(poly); defs.appendChild(marker); svgEl.appendChild(defs);
+
+    const vr = viewport.getBoundingClientRect();
+
+    connections.forEach(conn => {
+      const fc = cards.find(c => c.id === conn.from);
+      const tc = cards.find(c => c.id === conn.to);
+      if (!fc || !tc) return;
+      const fs = cardCenterScreen(fc);
+      const ts = cardCenterScreen(tc);
+      if (!fs || !ts) return;
+      const fx = fs.x - vr.left, fy = fs.y - vr.top;
+      const tx = ts.x - vr.left, ty = ts.y - vr.top;
+      const mx = (fx + tx) / 2;
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}`);
+      path.setAttribute('stroke', '#7c5cff');
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('fill', 'none');
+      path.setAttribute('marker-end', 'url(#cv-arrow)');
+      path.style.cursor = 'pointer';
+      path.addEventListener('click', () => {
+        if (confirm('Remove this connection?')) {
+          connections = connections.filter(c => !(c.from === conn.from && c.to === conn.to));
+          redrawConnections(); saveState();
+        }
+      });
+      svgEl.appendChild(path);
+    });
+  }
+
+  // ── Card rendering ────────────────────────────────────────
+  function renderCard(card) {
+    document.getElementById(`ccard-${card.id}`)?.remove();
+    const el = document.createElement('div');
+    el.className = `ccard ccard-${card.type}${card.id === selectedId ? ' selected' : ''}`;
+    el.id = `ccard-${card.id}`;
+    el.dataset.cardId = card.id;
+    el.style.cssText = `left:${card.x}px;top:${card.y}px;width:${card.w}px;`;
+
+    if (card.type === 'note') {
+      const preview = (card.content || '').replace(/[#*`\[\]]/g,'').slice(0, 160).trim()
+        || '<em style="opacity:0.4">Empty — double-click to open</em>';
+      el.innerHTML = `
+        <div class="ccard-header">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span class="ccard-title">${escHtml(card.title)}</span>
+          <button class="ccard-del" title="Delete">✕</button>
+        </div>
+        <div class="ccard-body">${preview}</div>
+        <div class="ccard-conn-handle" title="Drag to connect"></div>`;
+    } else {
+      el.innerHTML = `
+        <div class="ccard-header">
+          <span class="ccard-type-icon">T</span>
+          <div class="ccard-title-edit" contenteditable="true" spellcheck="false">${escHtml(card.title||'Text')}</div>
+          <button class="ccard-del" title="Delete">✕</button>
+        </div>
+        <div class="ccard-body ccard-editable" contenteditable="true" spellcheck="false">${card.content||''}</div>
+        <div class="ccard-conn-handle" title="Drag to connect"></div>`;
+    }
+
+    world.appendChild(el);
+    bindCardEl(el, card);
+    return el;
+  }
+
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function bindCardEl(el, card) {
+    el.addEventListener('mousedown', e => {
+      if (e.target.classList.contains('ccard-del')) return;
+      if (e.target.classList.contains('ccard-conn-handle')) return;
+      if (e.target.contentEditable === 'true') { selectCard(card.id); return; }
+      e.stopPropagation();
+      selectCard(card.id);
+      draggingCard = card;
+      const wp = screenToWorld(e.clientX, e.clientY);
+      dragOffset = { x: wp.x - card.x, y: wp.y - card.y };
+    });
+
+    if (card.type === 'note') {
+      el.addEventListener('dblclick', e => {
+        if (!e.target.classList.contains('ccard-del')) { close(); App.openNote(card.title); }
+      });
+    }
+
+    el.querySelector('.ccard-del').addEventListener('click', e => { e.stopPropagation(); deleteCard(card.id); });
+
+    el.querySelector('.ccard-conn-handle').addEventListener('mousedown', e => {
+      e.stopPropagation(); e.preventDefault();
+      isConnecting = true; connectFrom = card.id;
+    });
+
+    if (card.type === 'text') {
+      el.querySelector('.ccard-editable').addEventListener('input', function() { card.content = this.innerHTML; saveState(); });
+      el.querySelector('.ccard-title-edit')?.addEventListener('input', function() { card.title = this.textContent; saveState(); });
+    }
+  }
+
+  function selectCard(id) {
+    document.getElementById(`ccard-${selectedId}`)?.classList.remove('selected');
+    selectedId = id;
+    document.getElementById(`ccard-${id}`)?.classList.add('selected');
+  }
+
+  function deleteCard(id) {
+    cards = cards.filter(c => c.id !== id);
+    connections = connections.filter(c => c.from !== id && c.to !== id);
+    document.getElementById(`ccard-${id}`)?.remove();
+    if (selectedId === id) selectedId = null;
+    redrawConnections(); saveState();
+  }
+
+  // ── State persistence (localStorage) ─────────────────────
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ cards, connections, nextId }));
+  }
+  function loadState() {
+    try {
+      const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (!s) return;
+      cards = s.cards || []; connections = s.connections || []; nextId = s.nextId || 1;
+    } catch(_) { cards = []; connections = []; nextId = 1; }
+  }
+
+  // ── Note picker ───────────────────────────────────────────
+  function showNotePicker(cb) {
+    const notes = FileManager.getNotes().sort((a,b) => a.localeCompare(b));
+    function render(q) {
+      const f = q ? notes.filter(n => n.toLowerCase().includes(q.toLowerCase())) : notes;
+      notePickerList.innerHTML = f.map(n => `<div class="cnp-item" data-n="${escHtml(n)}">${escHtml(n)}</div>`).join('');
+      notePickerList.querySelectorAll('.cnp-item').forEach(item => {
+        item.addEventListener('click', () => { notePicker.classList.add('hidden'); cb(item.dataset.n); });
+      });
+    }
+    notePickerSearch.value = ''; render('');
+    notePickerSearch.oninput = () => render(notePickerSearch.value);
+    notePicker.classList.remove('hidden');
+    notePickerSearch.focus();
+    document.getElementById('cnp-close').onclick = () => notePicker.classList.add('hidden');
+  }
+
+  // ── Add cards ─────────────────────────────────────────────
+  function addNoteCard(title) {
+    const cx = (viewport.clientWidth / 2 - vpX) / vpScale;
+    const cy = (viewport.clientHeight / 2 - vpY) / vpScale;
+    const content = FileManager.getContent ? FileManager.getContent(title) : '';
+    const card = { id: nextId++, type: 'note', title, content: content||'', x: cx-160, y: cy-80, w: 320, h: 160 };
+    cards.push(card); renderCard(card); saveState(); redrawConnections();
+  }
+
+  function addTextCard() {
+    const cx = (viewport.clientWidth / 2 - vpX) / vpScale;
+    const cy = (viewport.clientHeight / 2 - vpY) / vpScale;
+    const card = { id: nextId++, type: 'text', title: 'Text', content: '', x: cx-120, y: cy-60, w: 240, h: 120 };
+    cards.push(card);
+    const el = renderCard(card); saveState();
+    setTimeout(() => el.querySelector('.ccard-editable')?.focus(), 50);
+  }
+
+  // ── Viewport events ───────────────────────────────────────
+  function bindEvents() {
+    // Pan start
+    viewport.addEventListener('mousedown', e => {
+      if (e.target === viewport || e.target === world || e.target === svgEl) {
+        isPanning = true;
+        panStart = { mx: e.clientX, my: e.clientY, vx: vpX, vy: vpY };
+        viewport.style.cursor = 'grabbing';
+        selectCard(null); selectedId = null;
+      }
+    });
+
+    // Move
+    window.addEventListener('mousemove', e => {
+      if (isPanning) {
+        vpX = panStart.vx + e.clientX - panStart.mx;
+        vpY = panStart.vy + e.clientY - panStart.my;
+        applyTransform();
+      }
+      if (draggingCard) {
+        const wp = screenToWorld(e.clientX, e.clientY);
+        draggingCard.x = wp.x - dragOffset.x;
+        draggingCard.y = wp.y - dragOffset.y;
+        const el = document.getElementById(`ccard-${draggingCard.id}`);
+        if (el) { el.style.left = `${draggingCard.x}px`; el.style.top = `${draggingCard.y}px`; }
+        redrawConnections();
+      }
+      if (isConnecting && connectFrom) {
+        redrawConnections();
+        const from = cardCenterScreen(cards.find(c => c.id === connectFrom));
+        if (from) {
+          const vr = viewport.getBoundingClientRect();
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.id = 'cv-temp-line';
+          line.setAttribute('x1', from.x - vr.left); line.setAttribute('y1', from.y - vr.top);
+          line.setAttribute('x2', e.clientX - vr.left); line.setAttribute('y2', e.clientY - vr.top);
+          line.setAttribute('stroke', '#7c5cff'); line.setAttribute('stroke-width', '2');
+          line.setAttribute('stroke-dasharray', '6,4');
+          document.getElementById('cv-temp-line')?.remove();
+          svgEl.appendChild(line);
+        }
+      }
+    });
+
+    // Release
+    window.addEventListener('mouseup', e => {
+      if (isPanning) { isPanning = false; viewport.style.cursor = 'grab'; }
+      if (draggingCard) { saveState(); draggingCard = null; }
+      if (isConnecting && connectFrom) {
+        document.getElementById('cv-temp-line')?.remove();
+        const hit = document.elementsFromPoint(e.clientX, e.clientY)
+          .find(el => el.classList.contains('ccard') && el.dataset.cardId != connectFrom);
+        if (hit) {
+          const toId = parseInt(hit.dataset.cardId);
+          const dup = connections.find(c => (c.from===connectFrom&&c.to===toId)||(c.from===toId&&c.to===connectFrom));
+          if (!dup) { connections.push({ from: connectFrom, to: toId }); saveState(); }
+        }
+        isConnecting = false; connectFrom = null; redrawConnections();
+      }
+    });
+
+    // Zoom
+    viewport.addEventListener('wheel', e => {
+      e.preventDefault();
+      const vr = viewport.getBoundingClientRect();
+      const mx = e.clientX - vr.left, my = e.clientY - vr.top;
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const ns = Math.min(Math.max(vpScale * delta, 0.1), 3);
+      vpX = mx - (mx - vpX) * (ns / vpScale);
+      vpY = my - (my - vpY) * (ns / vpScale);
+      vpScale = ns; applyTransform();
+    }, { passive: false });
+
+    // Keyboard
+    document.addEventListener('keydown', e => {
+      if (overlay.classList.contains('hidden')) return;
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && document.activeElement.contentEditable !== 'true') {
+        deleteCard(selectedId);
+      }
+      if (e.key === 'Escape') {
+        if (!notePicker.classList.contains('hidden')) { notePicker.classList.add('hidden'); return; }
+        close();
+      }
+      if ((e.ctrlKey||e.metaKey) && e.key === '0') { vpX=0; vpY=0; vpScale=1; applyTransform(); }
+    });
+
+    // Toolbar buttons
+    document.getElementById('btn-cv-add-note').addEventListener('click', () => showNotePicker(addNoteCard));
+    document.getElementById('btn-cv-add-text').addEventListener('click', addTextCard);
+    document.getElementById('btn-cv-reset').addEventListener('click', () => { vpX=0;vpY=0;vpScale=1;applyTransform(); });
+    document.getElementById('btn-cv-close').addEventListener('click', close);
+    document.getElementById('btn-cv-zoom-in').addEventListener('click', () => { vpScale=Math.min(vpScale*1.2,3); applyTransform(); });
+    document.getElementById('btn-cv-zoom-out').addEventListener('click', () => { vpScale=Math.max(vpScale/1.2,0.1); applyTransform(); });
+    document.getElementById('btn-cv-clear').addEventListener('click', () => {
+      if (confirm('Clear all cards and connections?')) {
+        cards=[]; connections=[]; world.innerHTML=''; redrawConnections(); saveState();
+      }
+    });
+
+    // Resize observer to redraw connections on window resize
+    window.addEventListener('resize', redrawConnections);
+  }
+
+  function open() {
+    loadState();
+    overlay.classList.remove('hidden');
+    // Re-render all cards
+    world.innerHTML = '';
+    cards.forEach(c => renderCard(c));
+    requestAnimationFrame(() => { applyTransform(); });
+  }
+
+  function close() {
+    overlay.classList.add('hidden');
+  }
+
+  function init() {
+    overlay          = document.getElementById('canvas-overlay');
+    viewport         = document.getElementById('cv-viewport');
+    world            = document.getElementById('cv-world');
+    svgEl            = document.getElementById('cv-svg');
+    zoomLabel        = document.getElementById('cv-zoom-label');
+    notePicker       = document.getElementById('cv-note-picker');
+    notePickerList   = document.getElementById('cv-note-picker-list');
+    notePickerSearch = document.getElementById('cv-note-picker-search');
+    world.style.transformOrigin = '0 0';
+    bindEvents();
+  }
+
+  return { init, open, close };
+})();

@@ -20,6 +20,7 @@ const App = (() => {
   const elRibbonFiles = document.getElementById('ribbon-files');
   const elRibbonSearch = document.getElementById('ribbon-search');
   const elRibbonGraph = document.getElementById('ribbon-graph');
+  const elRibbonCanvas = document.getElementById('ribbon-canvas');
   const elRibbonVault = document.getElementById('ribbon-vault');
   
   // Panels
@@ -336,6 +337,10 @@ const App = (() => {
       Graph.open();
     });
 
+    elRibbonCanvas.addEventListener('click', () => {
+      Canvas.open();
+    });
+
     elRibbonVault.addEventListener('click', () => {
       window.electronAPI.openFolder();
     });
@@ -531,7 +536,7 @@ const App = (() => {
         e.preventDefault(); 
         if (_activeTabId) closeTab(_activeTabId);
       }
-      if (e.key === 'Escape') Graph.close();
+      if (e.key === 'Escape') { Graph.close(); Canvas.close(); }
     });
 
     bindWindowControls();
@@ -539,6 +544,8 @@ const App = (() => {
     bindRibbonAndPanels();
     bindContextMenu();
     bindNoteOptionsMenu();
+    Canvas.init();
+    Graph.init();
 
     const notes = FileManager.getNotes();
     if (notes.length > 0) {
