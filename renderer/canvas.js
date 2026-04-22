@@ -7,6 +7,18 @@ const Canvas = (() => {
   // DOM refs (populated in init)
   let overlay, viewport, world, svgEl, zoomLabel, notePicker, notePickerList, notePickerSearch;
   let imagePicker, linkPicker;
+  let ctxMenu, ctxTargetId = null;
+
+  // Sticky color palette map
+  const COLOR_MAP = {
+    default: { bg: '#1e1e2e', header: '#16162a', text: '#dcddde' },
+    yellow:  { bg: '#fef08a', header: '#fde047', text: '#1a1a00' },
+    green:   { bg: '#86efac', header: '#4ade80', text: '#052e16' },
+    blue:    { bg: '#93c5fd', header: '#60a5fa', text: '#0c1a3d' },
+    pink:    { bg: '#f9a8d4', header: '#f472b6', text: '#3d0a1e' },
+    orange:  { bg: '#fdba74', header: '#fb923c', text: '#3a1200' },
+    purple:  { bg: '#c4b5fd', header: '#a78bfa', text: '#1e0a3d' },
+  };
 
   // Viewport transform
   let vpX = 0, vpY = 0, vpScale = 1;
@@ -100,6 +112,7 @@ const Canvas = (() => {
     el.id = `ccard-${card.id}`;
     el.dataset.cardId = card.id;
     el.style.cssText = `left:${card.x}px;top:${card.y}px;width:${card.w}px;`;
+    if (card.color && card.color !== 'default') applyCardColor(el, card.color);
 
     if (card.type === 'note') {
       const preview = (card.content || '').replace(/[#*`\[\]]/g,'').slice(0, 160).trim()
@@ -147,6 +160,14 @@ const Canvas = (() => {
           </a>
         </div>
         <div class="ccard-conn-handle" title="Drag to connect"></div>`;
+    } else if (card.type === 'sticky') {
+      el.innerHTML = `
+        <div class="ccard-sticky-header">
+          <span class="ccard-sticky-title" contenteditable="true" spellcheck="false">${escHtml(card.title||'')}</span>
+          <button class="ccard-del" title="Delete">✕</button>
+        </div>
+        <div class="ccard-sticky-body ccard-editable" contenteditable="true" spellcheck="false">${card.content||''}</div>
+        <div class="ccard-conn-handle" title="Drag to connect"></div>`;
     } else {
       el.innerHTML = `
         <div class="ccard-header">
@@ -164,6 +185,14 @@ const Canvas = (() => {
   }
 
   function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function applyCardColor(el, color) {
+    const c = COLOR_MAP[color] || COLOR_MAP.default;
+    el.style.setProperty('--ccard-bg',     c.bg);
+    el.style.setProperty('--ccard-header', c.header);
+    el.style.setProperty('--ccard-text',   c.text);
+    el.classList.toggle('ccard-colored', color !== 'default');
+  }
 
   function bindCardEl(el, card) {
     el.addEventListener('mousedown', e => {
@@ -193,6 +222,11 @@ const Canvas = (() => {
     if (card.type === 'text') {
       el.querySelector('.ccard-editable').addEventListener('input', function() { card.content = this.innerHTML; saveState(); });
       el.querySelector('.ccard-title-edit')?.addEventListener('input', function() { card.title = this.textContent; saveState(); });
+    }
+
+    if (card.type === 'sticky') {
+      el.querySelector('.ccard-sticky-body').addEventListener('input', function() { card.content = this.innerHTML; saveState(); });
+      el.querySelector('.ccard-sticky-title').addEventListener('input', function() { card.title = this.textContent; saveState(); });
     }
 
     if (card.type === 'link') {
@@ -281,6 +315,106 @@ const Canvas = (() => {
     const cy = (viewport.clientHeight / 2 - vpY) / vpScale;
     const card = { id: nextId++, type: 'link', url, title: title||url, description: description||'', x: cx-160, y: cy-70, w: 320 };
     cards.push(card); renderCard(card); saveState(); redrawConnections();
+  }
+
+  function addStickyCard(x, y) {
+    const cx = x !== undefined ? x : (viewport.clientWidth / 2 - vpX) / vpScale - 120;
+    const cy = y !== undefined ? y : (viewport.clientHeight / 2 - vpY) / vpScale - 80;
+    const card = { id: nextId++, type: 'sticky', title: '', content: '', color: 'yellow', x: cx, y: cy, w: 240 };
+    cards.push(card);
+    const el = renderCard(card); saveState();
+    setTimeout(() => el.querySelector('.ccard-sticky-body')?.focus(), 50);
+  }
+
+  // ── Context Menu ──────────────────────────────────────────
+  function showCtxMenu(screenX, screenY, cardId) {
+    ctxTargetId = cardId;
+    const card = cards.find(c => c.id === cardId);
+    // Hide color section for image/link types (optional — keep for all)
+    const colorSection = document.getElementById('cv-ctx-color-section');
+    if (colorSection) colorSection.style.display = '';
+    ctxMenu.classList.remove('hidden');
+    const vr = viewport.getBoundingClientRect();
+    let lx = screenX - vr.left, ly = screenY - vr.top;
+    ctxMenu.style.left = `${lx}px`;
+    ctxMenu.style.top  = `${ly}px`;
+    // Nudge inside viewport
+    requestAnimationFrame(() => {
+      const mr = ctxMenu.getBoundingClientRect();
+      const vRect = viewport.getBoundingClientRect();
+      if (mr.right  > vRect.right)  ctxMenu.style.left = `${lx - (mr.right  - vRect.right)  - 4}px`;
+      if (mr.bottom > vRect.bottom) ctxMenu.style.top  = `${ly - (mr.bottom - vRect.bottom) - 4}px`;
+    });
+  }
+
+  function hideCtxMenu() {
+    ctxMenu.classList.add('hidden');
+    ctxTargetId = null;
+  }
+
+  function bindCtxMenu() {
+    ctxMenu = document.getElementById('cv-context-menu');
+
+    document.getElementById('cv-ctx-duplicate').addEventListener('click', () => {
+      const card = cards.find(c => c.id === ctxTargetId);
+      if (!card) return hideCtxMenu();
+      const clone = JSON.parse(JSON.stringify(card));
+      clone.id = nextId++; clone.x += 24; clone.y += 24;
+      cards.push(clone); renderCard(clone); saveState(); redrawConnections();
+      hideCtxMenu();
+    });
+
+    document.getElementById('cv-ctx-bring-front').addEventListener('click', () => {
+      const idx = cards.findIndex(c => c.id === ctxTargetId);
+      if (idx === -1) return hideCtxMenu();
+      const [card] = cards.splice(idx, 1);
+      cards.push(card);
+      const el = document.getElementById(`ccard-${card.id}`);
+      if (el) world.appendChild(el); // move to end = topmost
+      saveState(); hideCtxMenu();
+    });
+
+    document.getElementById('cv-ctx-copy-text').addEventListener('click', () => {
+      const card = cards.find(c => c.id === ctxTargetId);
+      if (!card) return hideCtxMenu();
+      const text = card.content
+        ? card.content.replace(/<[^>]+>/g, '')
+        : card.title || card.url || '';
+      navigator.clipboard.writeText(text).catch(() => {});
+      if (typeof App !== 'undefined') App.showToast('Content copied', 'success');
+      hideCtxMenu();
+    });
+
+    document.getElementById('cv-ctx-delete').addEventListener('click', () => {
+      if (ctxTargetId !== null) deleteCard(ctxTargetId);
+      hideCtxMenu();
+    });
+
+    // Color swatches
+    document.querySelectorAll('.cv-ctx-color').forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        const color = swatch.dataset.color;
+        const card  = cards.find(c => c.id === ctxTargetId);
+        if (!card) return hideCtxMenu();
+        card.color = color;
+        const el = document.getElementById(`ccard-${card.id}`);
+        if (el) applyCardColor(el, color);
+        saveState(); hideCtxMenu();
+      });
+    });
+
+    // Dismiss on outside click
+    viewport.addEventListener('mousedown', e => {
+      if (!ctxMenu.contains(e.target)) hideCtxMenu();
+    });
+    // Dismiss on right-click on empty area
+    viewport.addEventListener('contextmenu', e => {
+      if (e.target === viewport || e.target === world || e.target === svgEl) {
+        e.preventDefault();
+        hideCtxMenu();
+        // Double right-click on empty canvas → add sticky at cursor
+      }
+    });
   }
 
   // ── Image Picker ──────────────────────────────────────────
@@ -488,6 +622,7 @@ const Canvas = (() => {
     document.getElementById('btn-cv-add-text').addEventListener('click', addTextCard);
     document.getElementById('btn-cv-add-image').addEventListener('click', showImagePicker);
     document.getElementById('btn-cv-add-link').addEventListener('click', showLinkPicker);
+    document.getElementById('btn-cv-add-sticky').addEventListener('click', () => addStickyCard());
     document.getElementById('btn-cv-reset').addEventListener('click', () => { vpX=0;vpY=0;vpScale=1;applyTransform(); });
     document.getElementById('btn-cv-close').addEventListener('click', close);
     document.getElementById('btn-cv-zoom-in').addEventListener('click', () => { vpScale=Math.min(vpScale*1.2,3); applyTransform(); });
@@ -497,6 +632,8 @@ const Canvas = (() => {
         cards=[]; connections=[]; world.innerHTML=''; redrawConnections(); saveState();
       }
     });
+
+    bindCtxMenu();
 
     // Close pickers on Escape
     document.addEventListener('keydown', e => {
