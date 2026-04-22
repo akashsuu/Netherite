@@ -152,3 +152,13 @@ ipcMain.handle('notes:getPath', (_, title) => {
 
 /** Return the notes directory path (for display) */
 ipcMain.handle('notes:getDir', () => NOTES_DIR);
+
+/** Open an external URL in the default browser */
+ipcMain.handle('shell:openExternal', (_, url) => {
+  const { shell } = require('electron');
+  if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+    shell.openExternal(url);
+    return true;
+  }
+  return false;
+});

@@ -24,4 +24,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   close:    () => ipcRenderer.send('window:close'),
   newWindow:() => ipcRenderer.send('window:new'),
   exportPdf:(title) => ipcRenderer.invoke('window:exportPdf', title),
+  openExternal:(url) => ipcRenderer.invoke('shell:openExternal', url),
 });

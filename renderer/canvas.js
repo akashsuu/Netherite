@@ -6,6 +6,7 @@ const Canvas = (() => {
 
   // DOM refs (populated in init)
   let overlay, viewport, world, svgEl, zoomLabel, notePicker, notePickerList, notePickerSearch;
+  let imagePicker, linkPicker;
 
   // Viewport transform
   let vpX = 0, vpY = 0, vpScale = 1;
@@ -111,6 +112,41 @@ const Canvas = (() => {
         </div>
         <div class="ccard-body">${preview}</div>
         <div class="ccard-conn-handle" title="Drag to connect"></div>`;
+    } else if (card.type === 'image') {
+      const src  = escHtml(card.src  || '');
+      const cap  = escHtml(card.caption || '');
+      el.innerHTML = `
+        <div class="ccard-header">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span class="ccard-title">${cap || 'Image'}</span>
+          <button class="ccard-del" title="Delete">✕</button>
+        </div>
+        <div class="ccard-body ccard-img-body">
+          <img src="${src}" alt="${cap}" class="ccard-img" draggable="false" />
+          ${cap ? `<p class="ccard-img-caption">${cap}</p>` : ''}
+        </div>
+        <div class="ccard-conn-handle" title="Drag to connect"></div>`;
+    } else if (card.type === 'link') {
+      const displayUrl = escHtml(card.url || '');
+      const title = escHtml(card.title || card.url || 'Link');
+      const desc  = escHtml(card.description || '');
+      // Extract hostname for favicon / display
+      let host = '';
+      try { host = new URL(card.url || '').hostname; } catch(_) {}
+      el.innerHTML = `
+        <div class="ccard-header">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span class="ccard-title">${title}</span>
+          <button class="ccard-del" title="Delete">✕</button>
+        </div>
+        <div class="ccard-body ccard-link-body">
+          ${desc ? `<p class="ccard-link-desc">${desc}</p>` : ''}
+          <a class="ccard-link-url" data-href="${displayUrl}" title="${displayUrl}">
+            ${host ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>` : ''}
+            ${escHtml(host || displayUrl)}
+          </a>
+        </div>
+        <div class="ccard-conn-handle" title="Drag to connect"></div>`;
     } else {
       el.innerHTML = `
         <div class="ccard-header">
@@ -157,6 +193,18 @@ const Canvas = (() => {
     if (card.type === 'text') {
       el.querySelector('.ccard-editable').addEventListener('input', function() { card.content = this.innerHTML; saveState(); });
       el.querySelector('.ccard-title-edit')?.addEventListener('input', function() { card.title = this.textContent; saveState(); });
+    }
+
+    if (card.type === 'link') {
+      el.querySelector('.ccard-link-url')?.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        const href = e.currentTarget.dataset.href;
+        if (href && window.electronAPI?.openExternal) {
+          window.electronAPI.openExternal(href);
+        } else if (href) {
+          window.open(href, '_blank', 'noopener');
+        }
+      });
     }
   }
 
@@ -219,6 +267,134 @@ const Canvas = (() => {
     cards.push(card);
     const el = renderCard(card); saveState();
     setTimeout(() => el.querySelector('.ccard-editable')?.focus(), 50);
+  }
+
+  function addImageCard(src, caption) {
+    const cx = (viewport.clientWidth / 2 - vpX) / vpScale;
+    const cy = (viewport.clientHeight / 2 - vpY) / vpScale;
+    const card = { id: nextId++, type: 'image', src, caption: caption||'', x: cx-160, y: cy-120, w: 320 };
+    cards.push(card); renderCard(card); saveState(); redrawConnections();
+  }
+
+  function addLinkCard(url, title, description) {
+    const cx = (viewport.clientWidth / 2 - vpX) / vpScale;
+    const cy = (viewport.clientHeight / 2 - vpY) / vpScale;
+    const card = { id: nextId++, type: 'link', url, title: title||url, description: description||'', x: cx-160, y: cy-70, w: 320 };
+    cards.push(card); renderCard(card); saveState(); redrawConnections();
+  }
+
+  // ── Image Picker ──────────────────────────────────────────
+  function showImagePicker() {
+    const urlInput    = document.getElementById('cv-img-url');
+    const captionInput = document.getElementById('cv-img-caption');
+    const previewWrap = document.getElementById('cv-img-preview-wrap');
+    const previewImg  = document.getElementById('cv-img-preview');
+    const fileInput   = document.getElementById('cv-img-file-input');
+    const fileName    = document.getElementById('cv-img-file-name');
+    const urlSection  = document.getElementById('cv-img-url-section');
+    const fileSection = document.getElementById('cv-img-file-section');
+    const tabUrl      = document.getElementById('cv-img-tab-url');
+    const tabFile     = document.getElementById('cv-img-tab-file');
+    const dropZone    = document.getElementById('cv-img-drop-zone');
+
+    // Reset
+    urlInput.value = ''; captionInput.value = '';
+    previewWrap.classList.add('hidden'); previewImg.src = '';
+    fileInput.value = ''; fileName.classList.add('hidden');
+    urlSection.classList.remove('hidden'); fileSection.classList.add('hidden');
+    tabUrl.classList.add('active'); tabFile.classList.remove('active');
+
+    let activeTab = 'url';
+    let dataUrl = null;
+
+    tabUrl.onclick = () => { activeTab='url'; tabUrl.classList.add('active'); tabFile.classList.remove('active'); urlSection.classList.remove('hidden'); fileSection.classList.add('hidden'); };
+    tabFile.onclick = () => { activeTab='file'; tabFile.classList.add('active'); tabUrl.classList.remove('active'); fileSection.classList.remove('hidden'); urlSection.classList.add('hidden'); };
+
+    // URL live preview
+    urlInput.oninput = () => {
+      const v = urlInput.value.trim();
+      if (v) { previewImg.src = v; previewWrap.classList.remove('hidden'); }
+      else { previewWrap.classList.add('hidden'); }
+    };
+
+    // File browse
+    document.getElementById('cv-img-browse').onclick = () => fileInput.click();
+    fileInput.onchange = () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      fileName.textContent = file.name; fileName.classList.remove('hidden');
+      const reader = new FileReader();
+      reader.onload = e => { dataUrl = e.target.result; };
+      reader.readAsDataURL(file);
+    };
+
+    // Drag & Drop
+    dropZone.ondragover = e => { e.preventDefault(); dropZone.classList.add('cv-drop-active'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('cv-drop-active');
+    dropZone.ondrop = e => {
+      e.preventDefault(); dropZone.classList.remove('cv-drop-active');
+      const file = e.dataTransfer.files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+      fileName.textContent = file.name; fileName.classList.remove('hidden');
+      const reader = new FileReader();
+      reader.onload = ev => { dataUrl = ev.target.result; };
+      reader.readAsDataURL(file);
+    };
+
+    imagePicker.classList.remove('hidden');
+    urlInput.focus();
+
+    document.getElementById('cv-img-close').onclick = () => imagePicker.classList.add('hidden');
+    document.getElementById('cv-img-cancel').onclick = () => imagePicker.classList.add('hidden');
+    document.getElementById('cv-img-confirm').onclick = () => {
+      const caption = captionInput.value.trim();
+      if (activeTab === 'url') {
+        const url = urlInput.value.trim();
+        if (!url) { urlInput.focus(); return; }
+        imagePicker.classList.add('hidden');
+        addImageCard(url, caption);
+      } else {
+        if (!dataUrl) { return; }
+        imagePicker.classList.add('hidden');
+        addImageCard(dataUrl, caption);
+      }
+    };
+  }
+
+  // ── Link Picker ───────────────────────────────────────────
+  function showLinkPicker() {
+    const urlInput   = document.getElementById('cv-link-url');
+    const titleInput = document.getElementById('cv-link-title');
+    const descInput  = document.getElementById('cv-link-desc');
+
+    urlInput.value = ''; titleInput.value = ''; descInput.value = '';
+    linkPicker.classList.remove('hidden');
+    urlInput.focus();
+
+    // Auto-fill title from URL on blur
+    urlInput.onblur = () => {
+      if (urlInput.value.trim() && !titleInput.value.trim()) {
+        try {
+          titleInput.value = new URL(urlInput.value.trim()).hostname;
+        } catch(_) {}
+      }
+    };
+
+    document.getElementById('cv-link-close').onclick  = () => linkPicker.classList.add('hidden');
+    document.getElementById('cv-link-cancel').onclick = () => linkPicker.classList.add('hidden');
+    document.getElementById('cv-link-confirm').onclick = () => {
+      const url = urlInput.value.trim();
+      if (!url) { urlInput.focus(); return; }
+      const title = titleInput.value.trim();
+      const desc  = descInput.value.trim();
+      linkPicker.classList.add('hidden');
+      addLinkCard(url, title, desc);
+    };
+
+    // Enter key confirms
+    [urlInput, titleInput, descInput].forEach(inp => {
+      inp.onkeydown = e => { if (e.key === 'Enter') document.getElementById('cv-link-confirm').click(); };
+    });
   }
 
   // ── Viewport events ───────────────────────────────────────
@@ -310,6 +486,8 @@ const Canvas = (() => {
     // Toolbar buttons
     document.getElementById('btn-cv-add-note').addEventListener('click', () => showNotePicker(addNoteCard));
     document.getElementById('btn-cv-add-text').addEventListener('click', addTextCard);
+    document.getElementById('btn-cv-add-image').addEventListener('click', showImagePicker);
+    document.getElementById('btn-cv-add-link').addEventListener('click', showLinkPicker);
     document.getElementById('btn-cv-reset').addEventListener('click', () => { vpX=0;vpY=0;vpScale=1;applyTransform(); });
     document.getElementById('btn-cv-close').addEventListener('click', close);
     document.getElementById('btn-cv-zoom-in').addEventListener('click', () => { vpScale=Math.min(vpScale*1.2,3); applyTransform(); });
@@ -317,6 +495,14 @@ const Canvas = (() => {
     document.getElementById('btn-cv-clear').addEventListener('click', () => {
       if (confirm('Clear all cards and connections?')) {
         cards=[]; connections=[]; world.innerHTML=''; redrawConnections(); saveState();
+      }
+    });
+
+    // Close pickers on Escape
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        if (!imagePicker.classList.contains('hidden')) { imagePicker.classList.add('hidden'); return; }
+        if (!linkPicker.classList.contains('hidden')) { linkPicker.classList.add('hidden'); return; }
       }
     });
 
@@ -346,6 +532,8 @@ const Canvas = (() => {
     notePicker       = document.getElementById('cv-note-picker');
     notePickerList   = document.getElementById('cv-note-picker-list');
     notePickerSearch = document.getElementById('cv-note-picker-search');
+    imagePicker      = document.getElementById('cv-image-picker');
+    linkPicker       = document.getElementById('cv-link-picker');
     world.style.transformOrigin = '0 0';
     bindEvents();
   }
