@@ -240,6 +240,13 @@ const Canvas = (() => {
         }
       });
     }
+
+    // Right-click → context menu
+    el.addEventListener('contextmenu', e => {
+      e.preventDefault(); e.stopPropagation();
+      selectCard(card.id);
+      showCtxMenu(e.clientX, e.clientY, card.id);
+    });
   }
 
   function selectCard(id) {
