@@ -1627,3 +1627,175 @@ kbd {
   border-color: var(--interactive-accent-hover);
   color: #fff;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   STICKY NOTE CARD
+══════════════════════════════════════════════════════════════ */
+.ccard-sticky {
+  min-width: 180px;
+  background: var(--ccard-bg, #fef08a);
+  border-color: transparent;
+  box-shadow: 3px 3px 12px rgba(0,0,0,0.35), 1px 1px 0 rgba(0,0,0,0.08);
+  position: relative;
+  overflow: hidden;
+}
+/* Dog-ear fold top-right corner */
+.ccard-sticky::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 22px; height: 22px;
+  background: linear-gradient(225deg, rgba(0,0,0,0.18) 50%, transparent 50%);
+  z-index: 1;
+  pointer-events: none;
+}
+.ccard-sticky:hover {
+  border-color: transparent;
+  box-shadow: 5px 5px 20px rgba(0,0,0,0.45), 1px 1px 0 rgba(0,0,0,0.1);
+}
+.ccard-sticky.selected {
+  box-shadow: 0 0 0 2px rgba(124,92,255,0.6), 4px 4px 16px rgba(0,0,0,0.5);
+  border-color: transparent;
+}
+
+.ccard-sticky-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px 5px;
+  background: var(--ccard-header, #fde047);
+  flex-shrink: 0;
+}
+.ccard-sticky-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ccard-text, #1a1a00);
+  outline: none;
+  white-space: nowrap;
+  overflow: hidden;
+  min-width: 20px;
+  cursor: text;
+  user-select: text;
+}
+.ccard-sticky-title:empty::before {
+  content: 'Title...';
+  opacity: 0.4;
+  pointer-events: none;
+}
+.ccard-sticky-body {
+  flex: 1;
+  padding: 8px 10px 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ccard-text, #1a1a00);
+  outline: none;
+  min-height: 60px;
+  cursor: text;
+  user-select: text;
+  word-break: break-word;
+}
+.ccard-sticky-body:empty::before {
+  content: 'Write something...';
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Color CSS vars applied via JS applyCardColor */
+.ccard-colored .ccard-header,
+.ccard-colored .ccard-sticky-header {
+  background: var(--ccard-header);
+}
+.ccard-colored .ccard-body,
+.ccard-colored .ccard-sticky-body {
+  color: var(--ccard-text);
+}
+.ccard-colored {
+  background: var(--ccard-bg);
+}
+.ccard-colored .ccard-title,
+.ccard-colored .ccard-sticky-title,
+.ccard-colored .ccard-title-edit {
+  color: var(--ccard-text);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CANVAS RIGHT-CLICK CONTEXT MENU
+══════════════════════════════════════════════════════════════ */
+#cv-context-menu {
+  position: absolute;
+  z-index: 200;
+  background: rgba(22, 22, 34, 0.96);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-m);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4);
+  min-width: 190px;
+  padding: 5px;
+  animation: ctx-in 0.1s ease;
+  overflow: hidden;
+}
+@keyframes ctx-in {
+  from { opacity: 0; transform: scale(0.93) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.cv-ctx-section { padding: 2px 0; }
+
+.cv-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  color: rgba(220,221,222,0.92);
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s;
+}
+.cv-ctx-item svg { color: rgba(180,180,200,0.7); flex-shrink: 0; }
+.cv-ctx-item:hover {
+  background: rgba(124,92,255,0.2);
+  color: #fff;
+}
+.cv-ctx-item:hover svg { color: var(--interactive-accent); }
+
+.cv-ctx-danger { color: #f87171 !important; }
+.cv-ctx-danger svg { color: #f87171 !important; }
+.cv-ctx-danger:hover { background: rgba(244,67,54,0.18) !important; color: #ff5555 !important; }
+
+.cv-ctx-separator {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 3px 5px;
+}
+
+.cv-ctx-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: rgba(150,150,170,0.7);
+  padding: 4px 12px 2px;
+}
+
+.cv-ctx-colors {
+  display: flex;
+  gap: 7px;
+  padding: 5px 12px 8px;
+  flex-wrap: wrap;
+}
+.cv-ctx-color {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.12s, border-color 0.12s;
+  flex-shrink: 0;
+}
+.cv-ctx-color:hover {
+  transform: scale(1.25);
+  border-color: rgba(255,255,255,0.6);
+}
