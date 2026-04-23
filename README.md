@@ -47,7 +47,7 @@ The application features a dynamic backlink system that connects notes using int
 
 * ⚡ Electron
 * 🎨 HTML, CSS, JavaScript
-* 💾 Local storage (JSON / SQLite)
+* 💾 Local storage (MD File)
 
 ---
 
