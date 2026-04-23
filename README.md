@@ -1,60 +1,136 @@
 # Netherite
 The application features a dynamic backlink system that connects notes using internal links, along with an interactive graph view that visualizes relationships between notes as a network. Designed with a modular architecture, the app focuses on performance, simplicity, and extensibility.
 
-✨ Features
-📂 Local-first storage (your notes stay on your device)
-📝 Markdown support
-🔗 Note linking system
-🌙 Dark mode UI
-⚡ Fast and lightweight
-📁 Folder-based organization
-🔍 Search functionality
-💾 Auto-save
-🛠️ Tech Stack
-Electron / Tauri
-HTML / CSS / JavaScript
-(Optional) SQLite / Local JSON storage
-📦 Installation
-1. Clone the repository
+# 🧠 Netherite Notes
+
+<p align="center">
+  <b>A fast, minimal, and powerful note-taking app</b><br>
+  Organize your ideas, knowledge, and workflow — fully local & distraction-free.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/stars/your-username/netherite?style=for-the-badge" />
+  <img src="https://img.shields.io/github/forks/your-username/netherite?style=for-the-badge" />
+  <img src="https://img.shields.io/github/issues/your-username/netherite?style=for-the-badge" />
+  <img src="https://img.shields.io/github/license/your-username/netherite?style=for-the-badge" />
+</p>
+
+---
+
+## ✨ Features
+
+* 📂 **Local-first** — your data stays on your device
+* 📝 **Markdown support** — write clean and structured notes
+* 🔗 **Note linking** — connect ideas together
+* 🌙 **Dark mode** — smooth UI for long sessions
+* ⚡ **Fast & lightweight**
+* 📁 **Folder organization**
+* 🔍 **Quick search**
+* 💾 **Auto-save**
+
+---
+
+## 📸 Preview
+
+<p align="center">
+  <img src="assets/screenshot1.png" width="800"/>
+</p>
+
+> Add your real screenshots or GIFs in `/assets`
+
+---
+
+## 🛠️ Tech Stack
+
+* ⚡ Electron / Tauri
+* 🎨 HTML, CSS, JavaScript
+* 💾 Local storage (JSON / SQLite)
+
+---
+
+## 🚀 Getting Started
+
+### 🔹 Clone the repo
+
+```bash
 git clone https://github.com/your-username/netherite.git
 cd netherite
-2. Install dependencies
+```
+
+### 🔹 Install dependencies
+
+```bash
 npm install
-3. Run the app
+```
+
+### 🔹 Run the app
+
+```bash
 npm start
-🏗️ Build
+```
 
-To create an executable:
+---
 
+## 📦 Build
+
+```bash
 npm run build
-📸 Screenshots
+```
 
-(Add screenshots here)
+> Output executable will be inside `/dist` or `/build`
 
-📁 Project Structure
-/src
-  /components
-  /pages
-  /utils
-main.js
-package.json
-🎯 Roadmap
+---
 
-Plugin system
+## 📁 Project Structure
 
-Sync support
+```
+netherite/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   └── utils/
+├── assets/
+├── main.js
+└── package.json
+```
 
-Mobile version
+---
 
-Graph visualization
+## 🧭 Roadmap
 
-Themes & customization
+* [ ] Plugin system
+* [ ] Sync across devices
+* [ ] Graph visualization
+* [ ] Themes & customization
+* [ ] Mobile companion app
 
-🤝 Contributing
+---
 
-Pull requests are welcome.
-For major changes, open an issue first to discuss what you'd like to improve.
+## 🤝 Contributing
 
-📄 License
+Contributions are welcome!
 
-MIT License
+1. Fork the repo
+2. Create a new branch
+3. Make your changes
+4. Submit a Pull Request
+
+---
+
+## 📊 Stats
+
+<p align="center">
+  <img src="https://github-readme-stats.vercel.app/api?username=your-username&show_icons=true&theme=tokyonight" />
+</p>
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## ⭐ Support
+
+If you like this project, consider giving it a ⭐ on GitHub!
