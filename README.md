@@ -33,7 +33,7 @@ The application features a dynamic backlink system that connects notes using int
 ## 📸 Preview
   <img src="image/screenshot1.png" width="800"/>
 <p align="center">
-  <img src="image/screenshot1.png" width="800"/>
+  <img width="299" height="386" alt="image/screenshot1" src="https://github.com/user-attachments/assets/54ac50d8-9ac2-445b-bf43-3a21268a8e36" />
   <img src="image/screenshot2.png" width="800"/>
   <img src="image/screenshot3.png" width="800"/>
 </p>
