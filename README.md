@@ -33,8 +33,11 @@ The application features a dynamic backlink system that connects notes using int
 ## 📸 Preview
 
 <p align="center">
+  IMAGE 1
   <img src="image/Screenshot1.png" width="800"/>
+  IMAGE 2
   <img src="image/Screenshot2.png" width="800"/>
+  IMAGE 3
   <img src="image/Screenshot3.png" width="800"/>
 </p>
 
