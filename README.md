@@ -9,10 +9,10 @@ The application features a dynamic backlink system that connects notes using int
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/github/stars/your-username/netherite?style=for-the-badge" />
-  <img src="https://img.shields.io/github/forks/your-username/netherite?style=for-the-badge" />
-  <img src="https://img.shields.io/github/issues/your-username/netherite?style=for-the-badge" />
-  <img src="https://img.shields.io/github/license/your-username/netherite?style=for-the-badge" />
+  <img src="https://img.shields.io/github/stars/akashsuu/netherite?style=for-the-badge" />
+  <img src="https://img.shields.io/github/forks/akashsuu/netherite?style=for-the-badge" />
+  <img src="https://img.shields.io/github/issues/akashsuu/netherite?style=for-the-badge" />
+  <img src="https://img.shields.io/github/license/akashsuu/netherite?style=for-the-badge" />
 </p>
 
 ---
