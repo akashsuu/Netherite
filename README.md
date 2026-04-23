@@ -33,7 +33,9 @@ The application features a dynamic backlink system that connects notes using int
 ## 📸 Preview
 
 <p align="center">
-  <img src="assets/screenshot1.png" width="800"/>
+  <img src="image/screenshot1.png" width="800"/>
+  <img src="image/screenshot2.png" width="800"/>
+  <img src="image/screenshot3.png" width="800"/>
 </p>
 
 > Add your real screenshots or GIFs in `/assets`
@@ -42,7 +44,7 @@ The application features a dynamic backlink system that connects notes using int
 
 ## 🛠️ Tech Stack
 
-* ⚡ Electron / Tauri
+* ⚡ Electron
 * 🎨 HTML, CSS, JavaScript
 * 💾 Local storage (JSON / SQLite)
 
