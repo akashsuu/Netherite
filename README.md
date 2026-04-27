@@ -102,7 +102,6 @@ netherite/
 ## 🧭 Roadmap
 
 * [ ] Plugin system
-* [ ] Sync across devices
 * [ ] Graph visualization
 * [ ] Themes & customization
 * [ ] Mobile companion app
