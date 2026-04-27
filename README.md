@@ -26,7 +26,7 @@ The application features a dynamic backlink system that connects notes using int
 * ⚡ **Fast & lightweight**
 * 📁 **Folder organization**
 * 🔍 **Quick search**
-* 💾 **Auto-save**
+* 💾 **real time Auto-save**
 
 ---
 
