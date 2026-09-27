@@ -1,7 +1,7 @@
 # Netherite
 The application features a dynamic backlink system that connects notes using internal links, along with an interactive graph view that visualizes relationships between notes as a network. Designed with a modular architecture, the app focuses on performance, simplicity, and extensibility.
 
-# 🧠 Netherite Notes
+#  Netherite Notes
 
 <p align="center">
   <b>A fast, minimal, and powerful note-taking app</b><br>
@@ -17,20 +17,20 @@ The application features a dynamic backlink system that connects notes using int
 
 ---
 
-## ✨ Features
+## Features
 
-* 📂 **Local-first** — your data stays on your device
-* 📝 **Markdown support** — write clean and structured notes
-* 🔗 **Note linking** — connect ideas together
-* 🌙 **Dark mode** — smooth UI for long sessions
-* ⚡ **Fast & lightweight**
-* 📁 **Folder organization**
-* 🔍 **Quick search**
-* 💾 **real time Auto-save**
+*  **Local-first** — your data stays on your device
+*  **Markdown support** — write clean and structured notes
+*  **Note linking** — connect ideas together
+*  **Dark mode** — smooth UI for long sessions
+*  **Fast & lightweight**
+*  **Folder organization**
+*  **Quick search**
+*  **real time Auto-save**
 
 ---
 
-## 📸 Preview
+##  Preview
 
 <p align="center">
   <img src="image/Screenshot1.png" width="800"/>
@@ -43,30 +43,30 @@ The application features a dynamic backlink system that connects notes using int
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
-* ⚡ Electron
-* 🎨 HTML, CSS, JavaScript
-* 💾 Local storage (MD File)
+*  Electron
+*  HTML, CSS, JavaScript
+*  Local storage (MD File)
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
-### 🔹 Clone the repo
+###  Clone the repo
 
 ```bash
 git clone https://github.com/your-username/netherite.git
 cd netherite
 ```
 
-### 🔹 Install dependencies
+###  Install dependencies
 
 ```bash
 npm install
 ```
 
-### 🔹 Run the app
+###  Run the app
 
 ```bash
 npm start
@@ -74,7 +74,7 @@ npm start
 
 ---
 
-## 📦 Build
+##  Build
 
 ```bash
 npm run build
@@ -84,7 +84,7 @@ npm run build
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 netherite/
@@ -99,7 +99,7 @@ netherite/
 
 ---
 
-## 🧭 Roadmap
+##  Roadmap
 
 * [ ] Plugin system
 * [ ] Graph visualization
@@ -108,7 +108,7 @@ netherite/
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome!
 
@@ -122,7 +122,7 @@ Contributions are welcome!
 
 ---
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License.
 
